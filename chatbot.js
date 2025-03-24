@@ -36,11 +36,6 @@ const handlerMensage = cli => async msg => {
     }
 
     const currentMenu = menuTree[userState[chatId]];
-    console.log('finishBot', finishBot)
-
-    /*if(finishBot) {
-        await cli.sendMessage(chatId, 'Assistente virtual da Maskavo finalizado 🙋🏽‍♂️. Obrigado, indo para o intervalo descansar um pouquinho 🏝️.');
-    }*/
 
     // Se o próximo passo for null, finalize a interação
     if (currentMenu.nextStep === null || finishBot) {
@@ -48,7 +43,6 @@ const handlerMensage = cli => async msg => {
     }
 
     if(startBot) {
-        //await cli.sendMessage(chatId, 'Assistente virtual da Maskavo iniciado 🙋🏽‍♂️. Vamos lá Maskavo, iniciando novamente a automação para seus clientes 👨🏽‍💻');
         userState[chatId] = 'main';
         startBot = false;
     }
@@ -93,14 +87,10 @@ const handlerMensage = cli => async msg => {
 };
 
 client1.on('message_create', async message => {
-    const chatId = message.from;
     if (message.id.fromMe) {
-        console.log('message.body.toLowerCase()', message.body.toLowerCase())
         if(message.body.toLowerCase() === 'maskavito, encerrar chatbot pois estou com cliente.') {
-            //await client1.sendMessage(chatId, 'Assistente virtual da Maskavo finalizado 🙋🏽‍♂️. Obrigado, indo para o intervalo descansar um pouquinho 🏝️.');
             finishBot = true;
         } else if(message.body.toLowerCase() === 'maskavito, retornar chatbot.') {
-            //await client1.sendMessage(chatId, 'Assistente virtual da Maskavo iniciado 🙋🏽‍♂️. Vamos lá Maskavo, iniciando novamente a automação para seus clientes 👨🏽‍💻');
             startBot = true;
             finishBot = false;
         }
