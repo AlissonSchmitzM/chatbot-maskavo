@@ -34,6 +34,17 @@ const handlerMensage = cli => async msg => {
     }
 
     const currentMenu = menuTree[userState[chatId]];
+
+    if(msg.body.toLowerCase() === 'AUTOMACAOINICIADA') {
+        userState[chatId] = 'main';
+    }
+
+    if(msg.body.toLowerCase() === 'AUTOMACAOFINALIZADA') {
+        await cli.sendMessage(chatId, 'Assistente virtual da Maskavo finalizado 🙋🏽‍♂️. Aguarde um momento enquanto te transfiro para nosso estilista 🪡✂️');
+        currentMenu.nextStep = null;
+        return;
+    }
+
     // Se o próximo passo for null, finalize a interação
     if (currentMenu.nextStep === null) {
         return;
