@@ -15,12 +15,14 @@ const delay = ms => new Promise(res => setTimeout(res, ms));
  
 let userState = {};
 
-const DEBUG = false;
-const specificContact1 = '554788889999'; //Enviar somente para esse contato
+const DEBUG = true;
+const specificContact1 = '554797048391';  //Enviar somente para esse contato
 
 const menuTree = require('./menuTree')
 
 const lastGreetingDate = {}; // Objeto para armazenar a última data de saudação por usuário
+let finishBot = false;
+let startBot = false;
 
 const handlerMensage = cli => async msg => {
     const chatId = msg.from;
@@ -30,24 +32,25 @@ const handlerMensage = cli => async msg => {
     }
     
     if (!userState[chatId]) {
-        userState[chatId] = 'main'; //
-    }
-
-    const currentMenu = menuTree[userState[chatId]];
-
-    if(msg.body.toLowerCase() === 'AUTOMACAOINICIADA') {
         userState[chatId] = 'main';
     }
 
-    if(msg.body.toLowerCase() === 'AUTOMACAOFINALIZADA') {
-        await cli.sendMessage(chatId, 'Assistente virtual da Maskavo finalizado 🙋🏽‍♂️. Aguarde um momento enquanto te transfiro para nosso estilista 🪡✂️');
-        currentMenu.nextStep = null;
+    const currentMenu = menuTree[userState[chatId]];
+    console.log('finishBot', finishBot)
+
+    /*if(finishBot) {
+        await cli.sendMessage(chatId, 'Assistente virtual da Maskavo finalizado 🙋🏽‍♂️. Obrigado, indo para o intervalo descansar um pouquinho 🏝️.');
+    }*/
+
+    // Se o próximo passo for null, finalize a interação
+    if (currentMenu.nextStep === null || finishBot) {
         return;
     }
 
-    // Se o próximo passo for null, finalize a interação
-    if (currentMenu.nextStep === null) {
-        return;
+    if(startBot) {
+        //await cli.sendMessage(chatId, 'Assistente virtual da Maskavo iniciado 🙋🏽‍♂️. Vamos lá Maskavo, iniciando novamente a automação para seus clientes 👨🏽‍💻');
+        userState[chatId] = 'main';
+        startBot = false;
     }
 
     const contact = await msg.getContact();
@@ -87,24 +90,22 @@ const handlerMensage = cli => async msg => {
     await chat.sendStateTyping();
     await delay(2000);
     await cli.sendMessage(chatId, menuTree[userState[chatId]].message);
-
-
-    /*if(userState[chatId] === 'uniformsStep3') {
-        try {
-            const imageURL = 'https://modamaskavo.com.br/wp-content/uploads/2023/08/Medidas.png'; // Substitua pelo URL da imagem
-
-            // Download da imagem
-            const responseImage = await axios.get(imageURL, { responseType: 'arraybuffer' });
-            const imageMedia = new MessageMedia('image/jpeg', responseImage.data.toString('base64'));
-    
-            // Enviar a imagem
-            await client.sendMessage(chatId, imageMedia);
-            console.log('Imagem enviada com sucesso!');
-        } catch (error) {
-            console.error('Erro ao enviar a mídia:', error);
-        }
-    }*/
 };
 
+client1.on('message_create', async message => {
+    const chatId = message.from;
+    if (message.id.fromMe) {
+        console.log('message.body.toLowerCase()', message.body.toLowerCase())
+        if(message.body.toLowerCase() === 'maskavito, encerrar chatbot pois estou com cliente.') {
+            //await client1.sendMessage(chatId, 'Assistente virtual da Maskavo finalizado 🙋🏽‍♂️. Obrigado, indo para o intervalo descansar um pouquinho 🏝️.');
+            finishBot = true;
+        } else if(message.body.toLowerCase() === 'maskavito, retornar chatbot.') {
+            //await client1.sendMessage(chatId, 'Assistente virtual da Maskavo iniciado 🙋🏽‍♂️. Vamos lá Maskavo, iniciando novamente a automação para seus clientes 👨🏽‍💻');
+            startBot = true;
+            finishBot = false;
+        }
+    }
+});
+
 client1.on('message', handlerMensage(client1));
-client1.initialize(); 
+client1.initialize();
