@@ -3,6 +3,7 @@
     "axios": "^1.8.4",
     "express": "^4.21.2",
     "moment-timezone": "^0.5.45",
+    "qrcode": "^1.5.4",
     "qrcode-terminal": "^0.12.0",
     "whatsapp-web.js": "^1.26.0"
   },

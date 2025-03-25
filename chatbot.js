@@ -1,101 +1,117 @@
-const qrcode = require('qrcode-terminal');
-const { Client, MessageMedia } = require('whatsapp-web.js');
- 
-const client1 = new Client({ });
+const QRCode = require('qrcode');
+const { Client } = require('whatsapp-web.js');
 
-client1.on('qr', qr => {
-    qrcode.generate(qr, { small: true });
-});
+const chatbot = (onQRCodeGenerated, onReady) => {
+    const client1 = new Client({});
 
-client1.on('ready', () => {
-    console.log('Tudo certo! WhatsApp cliente 1 conectado.');
-});
+    client1.on('qr', qr => {
+        // Gera o QR code como uma imagem base64
+        QRCode.toDataURL(qr, (err, url) => {
+            if (err) {
+                console.error('Erro ao gerar QR code:', err);
+                return;
+            }
+            if (onQRCodeGenerated) {
+                onQRCodeGenerated(url); // Chama a função de callback com o URL da imagem
+            }
+        });
+    });
 
-const delay = ms => new Promise(res => setTimeout(res, ms));
- 
-let userState = {};
-
-const DEBUG = true;
-const specificContact1 = '554797048391';  //Enviar somente para esse contato
-
-const menuTree = require('./menuTree')
-
-const lastGreetingDate = {}; // Objeto para armazenar a última data de saudação por usuário
-let finishBot = false;
-let startBot = false;
-
-const handlerMensage = cli => async msg => {
-    const chatId = msg.from;
-
-    if (chatId !== `${specificContact1}@c.us` && DEBUG) { 
-        return;
-    }
-    
-    if (!userState[chatId]) {
-        userState[chatId] = 'main';
-    }
-
-    const currentMenu = menuTree[userState[chatId]];
-
-    // Se o próximo passo for null, finalize a interação
-    if (currentMenu.nextStep === null || finishBot) {
-        return;
-    }
-
-    if(startBot) {
-        userState[chatId] = 'main';
-        startBot = false;
-    }
-
-    const contact = await msg.getContact();
-    const name = contact.pushname || 'usuário';
-
-    if (msg.body.match(/(menu|Menu|dia|tarde|noite|oi|Oi|Olá|olá|ola|Ola|Jean|MASKAVO)/i)) {
-        const today = new Date().toLocaleDateString();
-
-        if (!lastGreetingDate[chatId] || lastGreetingDate[chatId] !== today) {
-            await cli.sendMessage(chatId, `Olá ${name.split(" ")[0]} seja bem vindo! Sou o assistente virtual da Maskavo 👨🏽‍💻, Como posso ajudá-lo hoje? Digite *MASKAVO* a qualquer momento para voltar ao menu principal.`);
-            
-            // Atualiza a data da última saudação 
-            lastGreetingDate[chatId] = today;
-        } else {
-            await cli.sendMessage(chatId, `Certo ${name.split(" ")[0]}👨🏽‍💻, vamos de novo. Digite *MASKAVO* a qualquer momento para voltar ao menu principal.`);
+    client1.on('ready', () => {
+        console.log('não foi')
+        if (onReady) {
+            console.log('foi')
+            onReady('Tudo certo! WhatsApp cliente 1 conectado.');
         }
+    });
+    const delay = ms => new Promise(res => setTimeout(res, ms));
     
-        userState[chatId] = 'main';
-    } else if (currentMenu.nextStep) {
-        userState[chatId] = currentMenu.nextStep;
-    } else if (currentMenu.options[msg.body]) {
-        const next = currentMenu.options[msg.body];
-        if (menuTree[next]) {
-            userState[chatId] = next; 
-        } else {
-            await cli.sendMessage(chatId, next);
-            userState[chatId] = 'main';
+    let userState = {};
+
+    const DEBUG = true;
+    const specificContact1 = '554797048391';  //Enviar somente para esse contato
+
+    const menuTree = require('./menuTree')
+
+    const lastGreetingDate = {}; // Objeto para armazenar a última data de saudação por usuário
+    let finishBot = false;
+    let startBot = false;
+
+    const handlerMensage = cli => async msg => {
+        const chatId = msg.from;
+
+        if (chatId !== `${specificContact1}@c.us` && DEBUG) { 
             return;
         }
-    } else {
-        await cli.sendMessage(chatId, 'Opção inválida. Por favor, tente novamente.');
-        return;
-    }
+        
+        if (!userState[chatId]) {
+            userState[chatId] = 'main';
+        }
 
-    const chat = await msg.getChat();
+        const currentMenu = menuTree[userState[chatId]];
 
-    await chat.sendStateTyping();
-    await delay(2000);
-    await cli.sendMessage(chatId, menuTree[userState[chatId]].message);
+        // Se o próximo passo for null, finalize a interação
+        if (currentMenu.nextStep === null || finishBot) {
+            return;
+        }
+
+        if(startBot) {
+            userState[chatId] = 'main';
+            startBot = false;
+        }
+
+        const contact = await msg.getContact();
+        const name = contact.pushname || 'usuário';
+
+        if (msg.body.match(/(menu|Menu|dia|tarde|noite|oi|Oi|Olá|olá|ola|Ola|Jean|MASKAVO)/i)) {
+            const today = new Date().toLocaleDateString();
+
+            if (!lastGreetingDate[chatId] || lastGreetingDate[chatId] !== today) {
+                await cli.sendMessage(chatId, `Olá ${name.split(" ")[0]} seja bem vindo! Sou o assistente virtual da Maskavo 👨🏽‍💻, Como posso ajudá-lo hoje? Digite *MASKAVO* a qualquer momento para voltar ao menu principal.`);
+                
+                // Atualiza a data da última saudação 
+                lastGreetingDate[chatId] = today;
+            } else {
+                await cli.sendMessage(chatId, `Certo ${name.split(" ")[0]}👨🏽‍💻, vamos de novo. Digite *MASKAVO* a qualquer momento para voltar ao menu principal.`);
+            }
+        
+            userState[chatId] = 'main';
+        } else if (currentMenu.nextStep) {
+            userState[chatId] = currentMenu.nextStep;
+        } else if (currentMenu.options[msg.body]) {
+            const next = currentMenu.options[msg.body];
+            if (menuTree[next]) {
+                userState[chatId] = next; 
+            } else {
+                await cli.sendMessage(chatId, next);
+                userState[chatId] = 'main';
+                return;
+            }
+        } else {
+            await cli.sendMessage(chatId, 'Opção inválida. Por favor, tente novamente.');
+            return;
+        }
+
+        const chat = await msg.getChat();
+
+        await chat.sendStateTyping();
+        await delay(2000);
+        await cli.sendMessage(chatId, menuTree[userState[chatId]].message);
+    };
+
+    client1.on('message_create', async message => {
+        if (message.id.fromMe) {
+            if(message.body.toLowerCase() === 'maskavito, encerrar chatbot pois estou com cliente.') {
+                finishBot = true;
+            } else if(message.body.toLowerCase() === 'maskavito, retornar chatbot.') {
+                startBot = true;
+                finishBot = false;
+            }
+        }
+    });
+
+    client1.on('message', handlerMensage(client1));
+    client1.initialize();
 };
 
-client1.on('message_create', async message => {
-    if (message.id.fromMe) {
-        if(message.body.toLowerCase() === 'maskavito, encerrar chatbot pois estou com cliente.') {
-            finishBot = true;
-        } else if(message.body.toLowerCase() === 'maskavito, retornar chatbot.') {
-            startBot = true;
-            finishBot = false;
-        }
-    }
-});
-
-client1.on('message', handlerMensage(client1));
-client1.initialize();
+module.exports = { chatbot };
