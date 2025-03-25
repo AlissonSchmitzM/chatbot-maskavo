@@ -18,9 +18,7 @@ const chatbot = (onQRCodeGenerated, onReady) => {
     });
 
     client1.on('ready', () => {
-        console.log('não foi')
         if (onReady) {
-            console.log('foi')
             onReady('Tudo certo! WhatsApp cliente 1 conectado.');
         }
     });
